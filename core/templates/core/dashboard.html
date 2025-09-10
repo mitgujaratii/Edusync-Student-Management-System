@@ -1,0 +1,202 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Dashboard | EduSync{% endblock %}
+
+{% block content %}
+<div class="p-8 bg-gray-50 rounded-xl shadow-inner w-full">
+    <h2 class="text-4xl font-extrabold text-gray-800 mb-8">Dashboard</h2>
+
+    {% if has_data %}
+        <!-- Display counts at the top -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-xl flex items-center justify-between transition-transform transform hover:scale-105 duration-300">
+                <div>
+                    <h3 class="text-lg font-semibold">Total Students</h3>
+                    <p class="text-6xl font-bold mt-2">{{ total_students | intcomma }}</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-200 opacity-75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-4h-7m4 2a3 3 0 11-6 0 3 3 0 016 0zM5 16h11a3 3 0 003-3V6a3 3 0 00-3-3H5a3 3 0 00-3 3v7a3 3 0 003 3z"/>
+                </svg>
+            </div>
+            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-2xl shadow-xl flex items-center justify-between transition-transform transform hover:scale-105 duration-300">
+                <div>
+                    <h3 class="text-lg font-semibold">Total Courses</h3>
+                    <p class="text-6xl font-bold mt-2">{{ total_courses }}</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-200 opacity-75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.485 9.168 5 7.5 5S4.168 5.485 3 6.253v13C4.168 18.485 5.832 18 7.5 18s3.332.485 4.5 1.253m0-13C13.168 5.485 14.832 5 16.5 5s3.332.485 4.5 1.253v13C19.832 18.485 18.168 18 16.5 18s-3.332.485-4.5 1.253"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-xl">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Students Per Course</h3>
+                <div style="height: 320px;">
+                    <canvas id="studentsPerCourseChart" class="w-full"></canvas>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-xl">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Gender Distribution per Course</h3>
+                <div style="height: 320px;">
+                    <canvas id="genderDistributionChart" class="w-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-xl">
+            <div class="flex flex-wrap justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-2 md:mb-0">Top 10 Students</h3>
+                <div class="relative">
+                    <form method="get" action="{% url 'dashboard' %}" id="course-filter-form">
+                        <select id="course-filter" name="course" onchange="document.getElementById('course-filter-form').submit();" class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+                            {% for course in courses %}
+                            <option value="{{ course }}" {% if course == selected_course %}selected{% endif %}>{{ course }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full leading-normal">
+                    <thead>
+                        <tr>
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tl-lg">Name</th>
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Age</th>
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Course</th>
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tr-lg">Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in top_students %}
+                        <tr>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ student.first_name }} {{ student.last_name }}</td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ student.age }}</td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ student.course }}</td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm font-semibold text-blue-600">{{ student.percentage }}%</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center text-gray-500">No students found for this course.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="flex items-center justify-center h-96 text-center p-8 bg-white rounded-xl shadow-xl">
+            <p class="text-2xl font-semibold text-gray-500">There is no data in the database to be displayed. Please add a student to get started.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const studentsPerCourseRawData = "{{ students_per_course|escapejs }}";
+        const genderPerCourseRawData = "{{ gender_per_course|escapejs }}";
+
+        const studentsPerCourse = JSON.parse(studentsPerCourseRawData || '[]');
+        const genderPerCourse = JSON.parse(genderPerCourseRawData || '{}');
+        
+        if (studentsPerCourse.length > 0) {
+
+            const studentsPerCourseChartData = {
+                labels: studentsPerCourse.map(data => data.course),
+                datasets: [{
+                    label: 'Number of Students',
+                    data: studentsPerCourse.map(data => data.count),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)',
+                        'rgba(255, 159, 64, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            const studentsPerCourseConfig = {
+                type: 'bar',
+                data: studentsPerCourseChartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                },
+            };
+
+            const studentsPerCourseChart = new Chart(
+                document.getElementById('studentsPerCourseChart'),
+                studentsPerCourseConfig
+            );
+
+            const genderLabels = Object.keys(genderPerCourse);
+            const maleData = genderLabels.map(course => genderPerCourse[course].Male);
+            const femaleData = genderLabels.map(course => genderPerCourse[course].Female);
+            const otherData = genderLabels.map(course => genderPerCourse[course].Other);
+
+            const genderDistributionData = {
+                labels: genderLabels,
+                datasets: [
+                    {
+                        label: 'Male Students',
+                        data: maleData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Female Students',
+                        data: femaleData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Other',
+                        data: otherData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+
+            const genderDistributionConfig = {
+                type: 'bar',
+                data: genderDistributionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                },
+            };
+
+            const genderDistributionChart = new Chart(
+                document.getElementById('genderDistributionChart'),
+                genderDistributionConfig
+            );
+        }
+    });
+</script>
+{% endblock %}

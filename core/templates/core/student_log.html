@@ -1,0 +1,114 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Student Log | EduSync{% endblock %}
+
+{% block content %}
+<div class="p-8 bg-gray-50 rounded-xl shadow-inner w-full">
+    <h2 class="text-4xl font-extrabold text-gray-800 mb-8">Student Log</h2>
+
+    {% if page_obj %}
+    <div class="flex flex-wrap justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4 md:mb-0">All Students</h3>
+        <div class="flex items-center space-x-4">
+            <!-- Search bar -->
+            <form method="get" action="{% url 'student_log' %}" class="flex items-center">
+                <input type="hidden" name="course" value="{{ selected_course|default:'' }}">
+                <input type="hidden" name="sort" value="{{ sort_by|default:'asc' }}">
+                <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Search students..." class="w-48 px-4 py-2 border rounded-l-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-lg shadow-md transition duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </form>
+            
+            <!-- Filter and Sort -->
+            <form method="get" action="{% url 'student_log' %}" id="filter-form">
+                <input type="hidden" name="q" value="{{ query|default:'' }}">
+                <input type="hidden" name="sort" value="{{ sort_by|default:'asc' }}">
+                <select id="course-filter" name="course" onchange="document.getElementById('filter-form').submit();" class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course }}" {% if course == selected_course %}selected{% endif %}>{{ course }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <form method="get" action="{% url 'student_log' %}" id="sort-form">
+                <input type="hidden" name="course" value="{{ selected_course|default:'' }}">
+                <input type="hidden" name="q" value="{{ query|default:'' }}">
+                <select id="sort-order" name="sort" onchange="document.getElementById('sort-form').submit();" class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+                    <option value="asc" {% if sort_by == 'asc' %}selected{% endif %}>Sort: A-Z</option>
+                    <option value="desc" {% if sort_by == 'desc' %}selected{% endif %}>Sort: Z-A</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-xl overflow-x-auto">
+        <table class="min-w-full leading-normal">
+            <thead>
+                <tr>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tl-lg">Name</th>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Age</th>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Course</th>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Student ID</th>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Attendance %</th>
+                    <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tr-lg">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in page_obj %}
+                <tr>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ student.first_name }} {{ student.last_name }}</td>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ student.age }}</td>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ student.course }}</td>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ student.student_id }}</td>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                        {% with attendance=student.attendance_set.first %}
+                        {% if attendance %}
+                            <span class="font-semibold text-blue-600">{{ attendance.attendance_percentage }}%</span>
+                        {% else %}
+                            <span class="text-gray-500">N/A</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm flex items-center space-x-2">
+                        <a href="{% url 'update_student' student.pk %}" class="text-blue-600 hover:text-blue-800 hover:scale-110 transition duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </a>
+                        <form method="post" action="{% url 'delete_student' student.pk %}" onsubmit="return confirm('Are you sure you want to delete this student?');" class="inline-block">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-600 hover:text-red-800 hover:scale-110 transition duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center mt-6">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if selected_course %}&course={{ selected_course }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
+            {% endif %}
+
+            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if selected_course %}&course={{ selected_course }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
+            {% endif %}
+        </nav>
+    </div>
+    {% else %}
+    <div class="flex items-center justify-center h-96 text-center p-8 bg-white rounded-xl shadow-xl">
+        <p class="text-2xl font-semibold text-gray-500">No student data has been added yet. Please add a student to get started.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
